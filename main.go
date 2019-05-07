@@ -24,7 +24,7 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const workers = 4
+const defaultWorkers = 4
 const imageFingerprintSize = 8192
 const tokFile = ".googleuploads-token.json"
 
@@ -99,7 +99,9 @@ func main() {
 
 	jobs := make(chan string, 100)
 	wg := &sync.WaitGroup{}
-	for i := 0; i < workers; i++ {
+	wrkPtr := flag.Int("c", defaultWorkers, "number of concurrent uploads")
+	flag.Parse()
+	for i := 0; i < *wrkPtr; i++ {
 		go func() {
 			for path := range jobs {
 				uploadFile(path, token, client, db)
@@ -107,7 +109,6 @@ func main() {
 			}
 		}()
 	}
-	flag.Parse()
 	for _, dir := range flag.Args() {
 		fmt.Println(dir)
 		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
